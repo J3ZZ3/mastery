@@ -193,6 +193,12 @@ export default function LearnerWorkspace() {
   const learner = selectedLearner || progress?.learner;
   const liveEvents = useAgentStream(session?.id, session?.events || []);
 
+  useEffect(() => {
+    if (session?.status !== "analyzing" || busy) return undefined;
+    const timer = setInterval(() => load(true), 3000);
+    return () => clearInterval(timer);
+  }, [session?.id, session?.status, busy, load]);
+
   const applySession = useCallback(
     (nextSession) => {
       setProgress((current) =>

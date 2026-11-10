@@ -47,10 +47,13 @@ Express serves the built client and API from <http://localhost:8787>.
   `/api/health`, `/api/learners` and a frontend deep link on the Vercel URL.
 
 Render's default filesystem is ephemeral: `server/data/db.json` can be lost
-on restart or redeploy. A persistent disk is an option for a single-instance
-demo; the JSON repository is not a shared production database. The prototype
-has no authentication and its demo reset endpoint is public: use fictional
-data only and secure access before storing real learner information.
+on restart or redeploy. For a single-instance demo, a paid Render persistent
+disk can be mounted at `/var/data`; set `MASTERY_DATA_DIR=/var/data` on Render.
+This starts a fresh database on the disk unless you deliberately migrate the
+existing data. The JSON repository is not a shared production database or
+suitable for multiple processes or instances. The prototype has no
+authentication and its demo reset endpoint is public: use fictional data only
+and secure access before storing real learner information.
 
 ### Other scripts
 
@@ -115,7 +118,7 @@ Every agent receives structured input, returns a structured object validated by 
 - A failed step marks the session `error`; `LLM` failures fall back to a deterministic, validated result.
 - Mastery is `80%` with a maximum of **2 attempts** (`server/config.js`).
 - A failed first attempt triggers one adapted intervention; exhaustion or a pass runs Teacher Insight and completes the cycle.
-- SSE publishes live agent events; the client also receives a snapshot on connect and can fall back to polling.
+- SSE publishes live agent events; the client also polls persisted session snapshots in case the stream is interrupted or buffered.
 
 ---
 
@@ -190,7 +193,18 @@ OPENAI_TIMEOUT_MS=18000
 
 Each agent makes a chat-completions request with a deterministic fallback object included as the required JSON shape. The response is parsed, validated with Zod, and used only if valid. On a network error, timeout, malformed JSON or schema failure, the server logs a warning and uses the validated fallback, so the learning cycle never breaks.
 
-The provider in use is visible in the sidebar and returned by `/api/health`.
+Diagnostic and practice scores, mastery questions and answer keys, mastery scores,
+and the pass threshold come from the deterministic question bank and scoring
+code, not the model. The model may provide hints and other educational text;
+schema validation does not guarantee that generated explanations or diagnoses
+are factually correct. Teacher review remains necessary.
+
+Set these variables on Render and restart/redeploy the backend; Vercel does not
+need them. The provider configuration is visible in the sidebar and returned by
+`/api/health`, but it does not prove that a model call succeeded. Completed
+agent events identify `openai` or `openai-fallback`. Model calls may incur
+charges and transmit workflow inputs, including learner data, to the provider.
+Only use fictional data unless appropriate privacy and access controls exist.
 
 ### Other settings
 
@@ -206,9 +220,9 @@ DEMO_DELAY_MS=450
 
 ## Persistence
 
-The prototype persists to `server/data/db.json` through a small repository layer with a serialised write queue. The file is generated on first boot and gitignored. `npm run reset` or the UI reset action rebuilds the seeded learners, sessions and event history.
+The prototype persists to `server/data/db.json` through a small repository layer with a serialised write queue. Set `MASTERY_DATA_DIR` to use another directory (for example a Render disk mount). The file is generated on first boot and gitignored at its default location. Writes use a temporary file and rename; a corrupt database is reported rather than silently overwritten. `npm run reset` or the UI reset action rebuilds the seeded learners, sessions and event history.
 
-No Supabase or hosted database is required for the demo.
+No Supabase or hosted database is required for the demo, but the default Render filesystem is not durable.
 
 ---
 
@@ -234,7 +248,12 @@ The test suite covers:
    - `complete_support` teacher status
 4. invalid request handling (missing learner, incomplete diagnostic)
 
-The production client is verified with `npm run build`. A browser-level check of the Thabo flow and teacher dashboard is described in the demo script above.
+The tests also exercise a mock OpenAI-compatible provider and a complete
+six-agent workflow, scoring safeguards, and persistence across separate
+processes. Test data uses temporary directories and does not reset the local
+demo database. The production client is verified with `npm run build`. A
+browser-level check of the Thabo flow and teacher dashboard is described in
+the demo script above.
 
 ---
 

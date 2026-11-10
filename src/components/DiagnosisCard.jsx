@@ -19,7 +19,7 @@ export default function DiagnosisCard({ diagnosis, compact = false, className = 
             {diagnosis.isSurfaceLevel ? "Possible isolated slip" : `${diagnosis.severity} evidence`}
           </Badge>
           <Badge tone="slate" icon={FlaskConical}>
-            AI-assisted
+            Agent hypothesis
           </Badge>
         </div>
       </div>

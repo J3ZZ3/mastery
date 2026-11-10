@@ -209,7 +209,7 @@ export default function Overview() {
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <FlaskConical className="h-3.5 w-3.5 text-amber-300" aria-hidden="true" />
-                {health?.provider?.active === "openai" ? "AI provider connected" : "Runs fully offline"}
+                {health?.provider?.active === "openai" ? "AI provider configured" : "No model calls"}
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <Target className="h-3.5 w-3.5 text-sky-300" aria-hidden="true" />

@@ -71,7 +71,17 @@ export async function runTutorAgent({ intervention, answers, ai, latencyMs = 0 }
     payload: { intervention, answers, threshold: 67 },
   });
 
-  return { data, meta };
+  return {
+    data: {
+      ...data,
+      total: fallback.total,
+      correct: fallback.correct,
+      scorePercent: fallback.scorePercent,
+      results: fallback.results,
+      needsReteach: fallback.needsReteach,
+    },
+    meta,
+  };
 }
 
 export function checkPracticeAnswer({ question, answer }) {

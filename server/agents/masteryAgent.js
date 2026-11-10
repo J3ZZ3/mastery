@@ -36,7 +36,17 @@ export async function runMasteryQuestionsAgent({ gapKey, attempt, ai, latencyMs 
     payload: { gapKey, attempt, threshold: config.masteryThreshold },
   });
 
-  return { data, meta };
+  const generatedById = new Map(data.questions.map((question) => [question.id, question]));
+  return {
+    data: {
+      threshold: fallback.threshold,
+      questions: fallback.questions.map((question) => ({
+        ...question,
+        hint: generatedById.get(question.id)?.hint || question.hint,
+      })),
+    },
+    meta,
+  };
 }
 
 export function buildMasteryResult({ questions, answers, attempt, initialScore }) {
@@ -98,5 +108,16 @@ export async function runMasteryEvaluationAgent({ questions, answers, attempt, i
     payload: { questions, answers, attempt, initialScore, threshold: config.masteryThreshold },
   });
 
-  return { data, meta };
+  return {
+    data: {
+      ...data,
+      attempt: fallback.attempt,
+      correct: fallback.correct,
+      total: fallback.total,
+      scorePercent: fallback.scorePercent,
+      thresholdMet: fallback.thresholdMet,
+      comparison: fallback.comparison,
+    },
+    meta,
+  };
 }

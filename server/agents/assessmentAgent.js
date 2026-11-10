@@ -72,5 +72,15 @@ export async function runAssessmentAgent({ questions, answers, ai, latencyMs = 0
     payload: { questions, answers },
   });
 
-  return { data, meta };
+  return {
+    data: {
+      ...data,
+      totalQuestions: fallback.totalQuestions,
+      correctAnswers: fallback.correctAnswers,
+      incorrectAnswers: fallback.incorrectAnswers,
+      scorePercent: fallback.scorePercent,
+      items: fallback.items,
+    },
+    meta,
+  };
 }

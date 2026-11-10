@@ -1,14 +1,17 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { nowIso } from "../lib/id.js";
+import { newId, nowIso } from "../lib/id.js";
 import { buildSeedData } from "./seed.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const dataDir = path.resolve(here, "..", "data");
+const dataDir = process.env.MASTERY_DATA_DIR
+  ? path.resolve(process.env.MASTERY_DATA_DIR)
+  : path.resolve(here, "..", "data");
 const dbFile = path.join(dataDir, "db.json");
 
 let cache = null;
+let loading = null;
 let writeQueue = Promise.resolve();
 
 async function readDbFile() {
@@ -20,30 +23,40 @@ async function readDbFile() {
     }
     return parsed;
   } catch (error) {
-    if (error.code !== "ENOENT") {
-      console.warn(`[MASTERY] Could not read local database (${error.message}). Seeding a fresh one.`);
-    }
-    return null;
+    if (error.code === "ENOENT") return null;
+    throw new Error(`Could not read local database at ${dbFile}: ${error.message}`, { cause: error });
   }
 }
 
 async function writeDbFile(db) {
   await fs.mkdir(dataDir, { recursive: true });
-  await fs.writeFile(dbFile, JSON.stringify(db, null, 2), "utf8");
+  const temporaryFile = path.join(dataDir, `${newId("db")}.tmp`);
+  try {
+    await fs.writeFile(temporaryFile, JSON.stringify(db, null, 2), "utf8");
+    await fs.rename(temporaryFile, dbFile);
+  } finally {
+    await fs.rm(temporaryFile, { force: true });
+  }
 }
 
 async function ensureLoaded() {
   if (cache) return cache;
-
-  const existing = await readDbFile();
-  if (existing) {
-    cache = existing;
-    return cache;
+  if (!loading) {
+    loading = (async () => {
+      const existing = await readDbFile();
+      if (existing) {
+        cache = existing;
+      } else {
+        const fresh = buildSeedData();
+        await writeDbFile(fresh);
+        cache = fresh;
+      }
+      return cache;
+    })().finally(() => {
+      loading = null;
+    });
   }
-
-  cache = buildSeedData();
-  await writeDbFile(cache);
-  return cache;
+  return loading;
 }
 
 export async function getDb() {
@@ -104,12 +117,17 @@ export async function replaceLearner(learner) {
   });
 }
 
-export async function resetDb() {
-  const fresh = buildSeedData();
-  fresh.meta.resetCount = 1;
-  cache = fresh;
-  await writeDbFile(fresh);
-  return fresh;
+export function resetDb() {
+  const operation = writeQueue.then(async () => {
+    await ensureLoaded();
+    const fresh = buildSeedData();
+    fresh.meta.resetCount = 1;
+    await writeDbFile(fresh);
+    cache = fresh;
+    return fresh;
+  });
+  writeQueue = operation.catch(() => {});
+  return operation;
 }
 
 export const dbPaths = { dataDir, dbFile };

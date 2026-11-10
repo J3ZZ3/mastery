@@ -1,8 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 
 process.env.DEMO_DELAY_MS = "0";
 process.env.MASTERY_THRESHOLD = "80";
+process.env.AI_PROVIDER = "demo";
+const testDataDir = await mkdtemp(path.join(tmpdir(), "mastery-api-test-"));
+process.env.MASTERY_DATA_DIR = testDataDir;
 
 const { createApp } = await import("../server/app.js");
 
@@ -23,8 +29,8 @@ const api = async (path, options = {}) => {
 const post = (path, body) => api(path, { method: "POST", body: JSON.stringify(body) });
 
 test.after(async () => {
-  await post("/demo/reset", {});
   await new Promise((resolve) => server.close(resolve));
+  await rm(testDataDir, { recursive: true, force: true });
 });
 
 test("health and reset expose a working seeded demo", async () => {

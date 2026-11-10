@@ -122,7 +122,7 @@ function ProviderCard({ provider }) {
           <FlaskConical className="h-3.5 w-3.5 text-amber-300" aria-hidden="true" />
         )}
         <p className="text-[11px] font-semibold text-white">
-          {isOpenAI ? "AI provider connected" : "Deterministic demo"}
+          {isOpenAI ? "AI provider configured" : "Deterministic demo"}
         </p>
       </div>
       <p className="mt-1.5 text-[10px] leading-4 text-slate-400">
