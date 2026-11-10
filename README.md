@@ -31,6 +31,27 @@ npm start
 
 Express serves the built client and API from <http://localhost:8787>.
 
+### Vercel frontend and Render backend
+
+- On Render, leave the root directory blank, use `npm ci` as the build command
+  and `npm start` as the start command. Render supplies `PORT`.
+- On Vercel, use the repository root, `npm run build` and output directory
+  `dist`. Do not use `npm run dev` as the build command.
+- `vercel.json` proxies `/api` requests to
+  `https://mastery-583l.onrender.com` and serves the SPA for frontend routes.
+  Update that destination if the Render service URL changes.
+- Set backend variables such as `AI_PROVIDER=demo`, `MASTERY_THRESHOLD=80`
+  and `DEMO_DELAY_MS=450` on Render. OpenAI credentials, if used, belong on
+  Render only; do not use `VITE_` variables for secrets.
+- Push changes to the connected branch and redeploy Vercel. Check
+  `/api/health`, `/api/learners` and a frontend deep link on the Vercel URL.
+
+Render's default filesystem is ephemeral: `server/data/db.json` can be lost
+on restart or redeploy. A persistent disk is an option for a single-instance
+demo; the JSON repository is not a shared production database. The prototype
+has no authentication and its demo reset endpoint is public: use fictional
+data only and secure access before storing real learner information.
+
 ### Other scripts
 
 ```bash
