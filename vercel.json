@@ -9,7 +9,7 @@
     },
     {
       "source": "/api/:path*",
-      "destination": "https://mastery-583l.onrender.com/api/:path*"
+      "destination": "https://mastery-12.onrender.com/api/:path*"
     },
     {
       "source": "/(.*)",
