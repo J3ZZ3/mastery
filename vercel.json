@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/api",
-      "destination": "https://mastery-583l.onrender.com/api"
+      "destination": "https://mastery-12.onrender.com/api"
     },
     {
       "source": "/api/:path*",
